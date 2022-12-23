@@ -86,6 +86,7 @@ class CachedState:
             if self.last_scored != latest_scored:
                 self.last_scored = latest_scored
                 return [{'event': 'last-scored-match', 'data': latest_scored}]
+        return []
 
     async def update_knockouts(self):
         async with self.session.get(self.base_url + '/knockout') as response:
@@ -96,6 +97,7 @@ class CachedState:
             if self.knockouts != new_knockouts:
                 self.knockouts = new_knockouts
                 return [{'event': 'knockouts', 'data': new_knockouts}]
+        return []
 
     async def update_tiebreaker(self):
         async with self.session.get(self.base_url + '/tiebreaker') as response:
@@ -130,7 +132,7 @@ class CachedState:
             msgs =[]
             data = await self.get_json(response)
             if data is None:
-                return
+                return []
 
             if (new_current_match := data.get('matches')) is not None:
                 if self.current_match != new_current_match:
