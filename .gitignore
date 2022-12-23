@@ -108,3 +108,5 @@ venv.bak/
 core
 
 _version.py
+
+/compstate/
