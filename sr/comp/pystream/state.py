@@ -1,7 +1,11 @@
 import argparse
 import asyncio
+import logging
+from contextlib import asynccontextmanager
 
 import aiohttp
+
+LOGGER = logging.getLogger(__name__)
 
 
 class CachedState:
@@ -26,11 +30,26 @@ class CachedState:
         self.current_shepherding_matches = []
         self.current_delay = 0
 
-    async def get_json(self, response):
+    @asynccontextmanager
+    async def checked_response(self, path, silent_404=False):
+        url = self.base_url + path
         try:
-            return await response.json()
-        except aiohttp.ContentTypeError:
-            return None
+            async with self.session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as response:
+                if response.status == 200:
+                    try:
+                        data = await response.json()
+                    except aiohttp.ContentTypeError:
+                        LOGGER.error(f"Response from '{url}' is not JSON: {response.text()}")
+                        data = None
+
+                    yield data
+                else:
+                    if not (response.status == 404 and silent_404 is True):
+                        LOGGER.error(f"Invalid status code from '{url}': {response.status}")
+                    yield None
+        except aiohttp.ClientError as e:
+            LOGGER.error(f"Error making request to '{url}': {e}")
+            yield None
 
     async def update_data(self):
         msgs = []
@@ -50,8 +69,7 @@ class CachedState:
         return msgs
 
     async def update_teams(self):
-        async with self.session.get(self.base_url + '/teams') as response:
-            data = await self.get_json(response)
+        async with self.checked_response('/teams') as data:
             if data is None or (new_teams := data.get('teams')) is None:
                 return []
 
@@ -68,8 +86,7 @@ class CachedState:
             return team_changes
 
     async def update_matches(self):
-        async with self.session.get(self.base_url + '/matches') as response:
-            data = await self.get_json(response)
+        async with self.checked_response('/matches') as data:
             if data is None or (new_matches := data.get('matches')) is None:
                 return
 
@@ -78,8 +95,7 @@ class CachedState:
                 await self.update_current_state()
 
     async def update_last_scored_match(self):
-        async with self.session.get(self.base_url + '/matches/last_scored') as response:
-            data = await self.get_json(response)
+        async with self.checked_response('/matches/last_scored') as data:
             if data is None or (latest_scored := data.get('last_scored')) is None:
                 return []
 
@@ -89,8 +105,7 @@ class CachedState:
         return []
 
     async def update_knockouts(self):
-        async with self.session.get(self.base_url + '/knockout') as response:
-            data = await self.get_json(response)
+        async with self.checked_response('/knockout') as data:
             if data is None or (new_knockouts := data.get('rounds')) is None:
                 return []
 
@@ -100,10 +115,7 @@ class CachedState:
         return []
 
     async def update_tiebreaker(self):
-        async with self.session.get(self.base_url + '/tiebreaker') as response:
-            if response.status_code != 200:
-                return []
-            data = await self.get_json(response)
+        async with self.checked_response('/tiebreaker', silent_404=True) as data:
             if data is None or (new_tiebreaker := data.get('tiebreaker')) is None:
                 return []
 
@@ -112,8 +124,7 @@ class CachedState:
                 return [{'event': 'tiebreaker', 'data': new_tiebreaker}]
 
     async def update_state(self):
-        async with self.session.get(self.base_url + '/state') as response:
-            data = await self.get_json(response)
+        async with self.checked_response('/state') as data:
             if data is None or (new_state := data.get('state')) is None:
                 return
 
@@ -127,10 +138,8 @@ class CachedState:
                     await self.queue.put(msg)
 
     async def update_current_state(self):
-        pass
-        async with self.session.get(self.base_url + '/current') as response:
-            msgs =[]
-            data = await self.get_json(response)
+        async with self.checked_response('/current') as data:
+            msgs = []
             if data is None:
                 return []
 
@@ -163,8 +172,7 @@ class CachedState:
             return msgs
 
     async def update_config(self):
-        async with self.session.get(self.base_url + '/config') as response:
-            data = await self.get_json(response)
+        async with self.checked_response('/config') as data:
             if data is None or (new_config := data.get('config')) is None:
                 return
 
