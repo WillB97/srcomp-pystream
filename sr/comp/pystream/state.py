@@ -59,7 +59,7 @@ class CachedState:
         team_updates = await self.update_teams()
         msgs.extend([
             {'event': 'team', 'data': team_msg}
-            for team_msg in team_updates.values()
+            for team_msg in team_updates
         ])
 
         await self.update_matches()
@@ -170,7 +170,9 @@ class CachedState:
                     self.current_delay = new_current_delay
                     msgs.append({'event': 'current-delay', 'data': new_current_delay})
 
-            return msgs
+            if self.queue:
+                for msg in msgs:
+                    await self.queue.put(msg)
 
     async def update_config(self):
         async with self.checked_response('/config') as data:
@@ -205,22 +207,27 @@ class CachedState:
 
         return msgs
 
-    async def _periodic_task(self, coro, interval):
+    async def _periodic_task(self, coro, interval, args=[]):
         while True:
             await asyncio.gather(
                 asyncio.sleep(interval),
-                coro,
+                coro(*args),
             )
 
     async def run(self):
         self.session = aiohttp.ClientSession()
 
+        # Generate initial state
+        await self.update_state()
+        await self.update_current_state()
+        await self.update_config()
+
         self.state_task = asyncio.create_task(
-            self._periodic_task(self.update_state(), 0.5))
+            self._periodic_task(self.update_state, 0.5))
         self.current_state_task = asyncio.create_task(
-            self._periodic_task(self.update_current_state(), 2))
+            self._periodic_task(self.update_current_state, 2))
         self.config_task = asyncio.create_task(
-            self._periodic_task(self.update_config(), 0.3))
+            self._periodic_task(self.update_config, 0.3))
 
     async def stop(self):
         for task in (self.state_task, self.current_state_task, self.config_task):
