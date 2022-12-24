@@ -11,6 +11,7 @@ LOGGER = logging.getLogger(__name__)
 class CachedState:
     def __init__(self, base_url, queue=None) -> None:
         self.session = None
+        self._timeout = aiohttp.ClientTimeout(total=5)
         self.base_url = base_url.rstrip('/')
         self.queue = queue
 
@@ -34,7 +35,7 @@ class CachedState:
     async def checked_response(self, path, silent_404=False):
         url = self.base_url + path
         try:
-            async with self.session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as response:
+            async with self.session.get(url, timeout=self._timeout) as response:
                 if response.status == 200:
                     try:
                         data = await response.json()
@@ -156,12 +157,12 @@ class CachedState:
                         'data': new_current_staging_matches
                     })
 
-            if (new_current_shepherding_matches := data.get('shepherding_matches')) is not None:
-                if self.current_shepherding_matches != new_current_shepherding_matches:
-                    self.current_shepherding_matches = new_current_shepherding_matches
+            if (new_current_shepherding := data.get('shepherding_matches')) is not None:
+                if self.current_shepherding_matches != new_current_shepherding:
+                    self.current_shepherding_matches = new_current_shepherding
                     msgs.append({
                         'event': 'current-shepherding-matches',
-                        'data': new_current_shepherding_matches
+                        'data': new_current_shepherding
                     })
 
             if (new_current_delay := data.get('delay')) is not None:
@@ -186,8 +187,14 @@ class CachedState:
             for team in self.teams.values()
         ])
         msgs.append({'event': 'match', 'data': self.current_match})
-        msgs.append({'event': 'current-staging-matches', 'data': self.current_staging_matches})
-        msgs.append({'event': 'current-shepherding-matches', 'data': self.current_shepherding_matches})
+        msgs.append({
+            'event': 'current-staging-matches',
+            'data': self.current_staging_matches
+        })
+        msgs.append({
+            'event': 'current-shepherding-matches',
+            'data': self.current_shepherding_matches
+        })
         if self.last_scored is not None:
             msgs.append({'event': 'last-scored-match', 'data': self.last_scored})
         if self.knockouts is not []:
@@ -207,10 +214,13 @@ class CachedState:
 
     async def run(self):
         self.session = aiohttp.ClientSession()
-        self.state_task = asyncio.create_task(self._periodic_task(self.update_state(), 0.5))
+
+        self.state_task = asyncio.create_task(
+            self._periodic_task(self.update_state(), 0.5))
         self.current_state_task = asyncio.create_task(
             self._periodic_task(self.update_current_state(), 2))
-        self.config_task = asyncio.create_task(self._periodic_task(self.update_config(), 0.3))
+        self.config_task = asyncio.create_task(
+            self._periodic_task(self.update_config(), 0.3))
 
     async def stop(self):
         for task in (self.state_task, self.current_state_task, self.config_task):
