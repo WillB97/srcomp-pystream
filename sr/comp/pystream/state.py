@@ -13,6 +13,7 @@ class CachedState:
         self.session = None
         self._timeout = aiohttp.ClientTimeout(total=5)
         self.base_url = base_url.rstrip('/')
+        # Event messages are sent to this queue
         self.queue = queue
 
         self.state_task = None
@@ -33,6 +34,7 @@ class CachedState:
 
     @asynccontextmanager
     async def checked_response(self, path, silent_404=False):
+        """Handle errors raised while connecting tho the HTTP API or from malformed data."""
         url = self.base_url + path
         try:
             async with self.session.get(url, timeout=self._timeout) as response:
@@ -53,6 +55,11 @@ class CachedState:
             yield None
 
     async def update_data(self):
+        """
+        Refresh the team, last scored, knockout and tiebreaker states.
+
+        Returns a list of event messages for any state information that has changed.
+        """
         msgs = []
         print("Reloading data")
 
@@ -70,6 +77,11 @@ class CachedState:
         return msgs
 
     async def update_teams(self):
+        """
+        Fetch the teams data from the HTTP API and cache it.
+
+        Returns a list of event messages for any teams that have changed.
+        """
         async with self.checked_response('/teams') as data:
             if data is None or (new_teams := data.get('teams')) is None:
                 return []
@@ -87,6 +99,11 @@ class CachedState:
             return team_changes
 
     async def update_matches(self):
+        """
+        Fetch the matches data from the HTTP API and cache it.
+
+        Triggers refetching the current matches if the value has changed.
+        """
         async with self.checked_response('/matches') as data:
             if data is None or (new_matches := data.get('matches')) is None:
                 return
@@ -96,6 +113,11 @@ class CachedState:
                 await self.update_current_state()
 
     async def update_last_scored_match(self):
+        """
+        Fetch the last scored match number from the HTTP API and cache it.
+
+        Returns an event message if the value has changed.
+        """
         async with self.checked_response('/matches/last_scored') as data:
             if data is None or (latest_scored := data.get('last_scored')) is None:
                 return []
@@ -106,6 +128,11 @@ class CachedState:
         return []
 
     async def update_knockouts(self):
+        """
+        Fetch the latest knockout round values from the HTTP API and cache it.
+
+        Returns an event message if the value has changed.
+        """
         async with self.checked_response('/knockout') as data:
             if data is None or (new_knockouts := data.get('rounds')) is None:
                 return []
@@ -116,6 +143,11 @@ class CachedState:
         return []
 
     async def update_tiebreaker(self):
+        """
+        Fetch the latest tiebreaker value from the HTTP API and cache it.
+
+        Returns an event message if the value has changed.
+        """
         async with self.checked_response('/tiebreaker', silent_404=True) as data:
             if data is None or (new_tiebreaker := data.get('tiebreaker')) is None:
                 return []
@@ -125,6 +157,13 @@ class CachedState:
                 return [{'event': 'tiebreaker', 'data': new_tiebreaker}]
 
     async def update_state(self):
+        """
+        Fetch the current state hash from the HTTP API and cache it.
+
+        When the state information has changed:
+        1. Triggers the team, last scored, knockout and tiebreaker state to be refreshed.
+        2. Sends event messages to `self.queue` for all changes encountered.
+        """
         async with self.checked_response('/state') as data:
             if data is None or (new_state := data.get('state')) is None:
                 return
@@ -139,10 +178,15 @@ class CachedState:
                     await self.queue.put(msg)
 
     async def update_current_state(self):
+        """
+        Fetch the current matches data from the HTTP API and cache it.
+
+        Sends event messages to `self.queue` if the match information has changed.
+        """
         async with self.checked_response('/current') as data:
             msgs = []
             if data is None:
-                return []
+                return
 
             if (new_current_match := data.get('matches')) is not None:
                 if self.current_match != new_current_match:
@@ -175,6 +219,9 @@ class CachedState:
                     await self.queue.put(msg)
 
     async def update_config(self):
+        """
+        Fetch the latest config data from the HTTP API and cache it.
+        """
         async with self.checked_response('/config') as data:
             if data is None or (new_config := data.get('config')) is None:
                 return
@@ -182,6 +229,11 @@ class CachedState:
             self.config = new_config
 
     def current_data(self):
+        """
+        Generate a list of events to express the currently cached state.
+
+        This is useful for when a new client connects.
+        """
         msgs = []
 
         msgs.extend([
@@ -208,6 +260,7 @@ class CachedState:
         return msgs
 
     async def _periodic_task(self, coro, interval, args=[]):
+        """Helper wrapper to run a coroutine periodically each interval seconds."""
         while True:
             await asyncio.gather(
                 asyncio.sleep(interval),
@@ -215,6 +268,7 @@ class CachedState:
             )
 
     async def run(self):
+        """Begin fetching the state from the HTTP API periodically."""
         self.session = aiohttp.ClientSession()
 
         # Generate initial state
@@ -222,6 +276,7 @@ class CachedState:
         await self.update_current_state()
         await self.update_config()
 
+        # Set particular update routines to run as periodic tasks
         self.state_task = asyncio.create_task(
             self._periodic_task(self.update_state, 0.5))
         self.current_state_task = asyncio.create_task(
@@ -230,6 +285,7 @@ class CachedState:
             self._periodic_task(self.update_config, 0.3))
 
     async def stop(self):
+        """Stop the update tasks and close the underlying network session."""
         for task in (self.state_task, self.current_state_task, self.config_task):
             if task:
                 task.cancel()
@@ -241,22 +297,45 @@ class CachedState:
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=(
+        "An example of fetching state from the HTTP API and printing the event "
+        "stream to console."))
 
     parser.add_argument('url', help="The URL of the SRComp HTTP API.")
 
     args = parser.parse_args(argv)
 
+    def print_event(msg):
+        """Format event messages to match event strean output."""
+        print(f"event: {msg['event']}")
+        print(f"data: {msg['data']}")
+        print()
+
     async def api_fetch(base_url):
-        state = CachedState(base_url)
+        """An example task to fetch state from the API and print an event stream to console."""
+        event_queue = asyncio.Queue()
+        state = CachedState(base_url, event_queue)
         await state.run()
-        await asyncio.sleep(1)
-        await state.stop()
-
         for msg in state.current_data():
-            print(msg)
+            print_event(msg)
 
-    asyncio.run(api_fetch(args.url))
+        try:
+            while not event_queue.empty():
+                msg = await event_queue.get()
+                event_queue.task_done()
+
+            while not state.session.closed:
+                msg = await event_queue.get()
+                print_event(msg)
+                event_queue.task_done()
+        finally:
+            await asyncio.sleep(0)
+            await state.stop()
+
+    try:
+        asyncio.run(api_fetch(args.url))
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == '__main__':
