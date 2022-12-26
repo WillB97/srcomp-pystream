@@ -1,4 +1,6 @@
+import json
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 
 from aiohttp import WSMsgType, web
@@ -42,7 +44,19 @@ async def websocket_handler(request):
 
     try:
         async for msg in ws:
+            srv_recv = datetime.now(tz=timezone.utc).timestamp()
             if msg.type == WSMsgType.TEXT:
+                if 'timesync' in msg.data:
+                    try:
+                        data = msg.json()
+                        if data.get('type') == 'timesync':
+                            srv_sent = datetime.now(tz=timezone.utc).timestamp()
+                            data['server_recv'] = srv_recv
+                            data['server_sent'] = srv_sent
+                            await ws.send_json(data)
+                            continue
+                    except json.JSONDecodeError:
+                        pass
                 LOGGER.info(f"Received websocket message: {msg.data}")
             elif msg.type == WSMsgType.ERROR:
                 LOGGER.warning(
@@ -59,4 +73,5 @@ async def websocket_handler(request):
 
 
 def setup(app):
+    routes.static('/static', Path(__file__).parent / 'files')
     app.router.add_routes(routes)
