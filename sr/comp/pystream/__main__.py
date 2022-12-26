@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
 import argparse
-import asyncio
 import logging
 
 from aiohttp import web
@@ -51,6 +50,7 @@ def main():
     setup(app, args.api_url, args.debug)
 
     web.run_app(app, host=args.bind_address, port=args.port)
+
 
 if __name__ == '__main__':
     main()

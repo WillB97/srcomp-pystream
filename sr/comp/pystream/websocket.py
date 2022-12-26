@@ -45,8 +45,9 @@ async def websocket_handler(request):
             if msg.type == WSMsgType.TEXT:
                 LOGGER.info(f"Received websocket message: {msg.data}")
             elif msg.type == WSMsgType.ERROR:
-                LOGGER.warning('ws connection closed with exception %s' %
-                      ws.exception())
+                LOGGER.warning(
+                    'ws connection closed with exception %s' %
+                    ws.exception())
     except ConnectionResetError:
         # Catch errors from trying to receive from a dead websocket
         pass

@@ -1,9 +1,9 @@
-import json
 import asyncio
+import json
 import logging
 
 from aiohttp import web
-from aiohttp_sse import EventSourceResponse, sse_response
+from aiohttp_sse import EventSourceResponse
 
 LOGGER = logging.getLogger(__name__)
 routes = web.RouteTableDef()
@@ -48,7 +48,7 @@ async def stream_handler(request):
     else:
         for msg in initial_data:
             await stream.send(
-                json.dumps(msg['data'], separators=(',',':')), event=msg['event'])
+                json.dumps(msg['data'], separators=(',', ':')), event=msg['event'])
 
     request.app["streams"].add(stream)
     try:

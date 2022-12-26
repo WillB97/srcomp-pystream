@@ -33,7 +33,7 @@ pip install -e .[dev]
 The code can be run the same as above, [srcomp-dev](https://github.com/PeterJCLaw/srcomp-dev)
 may be useful for running this in a development environment.
 
-To run linting, type checking and isort again the codebase, run:
+To run linting, ~~type checking~~ and isort again the codebase, run:
 ```
 make check
 ```

@@ -6,10 +6,11 @@ TESTS:=tests
 PYTHON?=python
 COMP_API?=http://localhost:5112/comp-api
 
-run:
-	./venv/bin/srcomp-pystream $(COMP_API)
+check: lint
+	$(PYTHON) -m isort --check $(PYMODULE)
 
-check: lint type
+run:
+	srcomp-pystream $(COMP_API)
 
 lint:
 	flake8 $(PYMODULE) $(TESTS)

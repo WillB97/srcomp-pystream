@@ -2,7 +2,6 @@ import asyncio
 import logging
 import weakref
 from contextlib import suppress
-from datetime import datetime
 
 from aiohttp.web import WebSocketResponse
 from aiohttp_sse import EventSourceResponse
