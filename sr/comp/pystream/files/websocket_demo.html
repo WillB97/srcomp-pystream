@@ -16,9 +16,9 @@
                 const msg = JSON.parse(event.data);
                 // Format to match viewing an eventstream
                 if ("event" in msg) {
-                    document.getElementById('response').append("event: " + msg.event + "\\n");
+                    document.getElementById('response').append("event: " + msg.event + "\n");
                 }
-                document.getElementById('response').append("data: " + msg.data + "\\n\\n");
+                document.getElementById('response').append("data: " + JSON.stringify(msg.data) + "\n\n");
             });
 
             // Reconnect the websocket if it closes

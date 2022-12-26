@@ -22,7 +22,7 @@ async def websocket_handler(request):
     if not ws_ready.ok:
         # Return a page to view the websocket messages on if this is an HTTP request
         return Response(
-            text=Path(__file__).parent / 'files/websocket_demo.html',
+            text=(Path(__file__).parent / 'files/websocket_demo.html').read_text(),
             content_type="text/html")
 
     # Setup the websocket and
