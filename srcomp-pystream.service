@@ -1,0 +1,14 @@
+[Unit]
+Description="Publishes a stream of events representing changes in the competition state."
+After=srcomp-http.service
+
+[Service]
+User=www-data
+
+Type=simple
+Restart=on-failure
+
+ExecStart=srcomp-pystream "http://localhost/comp-api"
+
+[Install]
+WantedBy=multi-user.target
