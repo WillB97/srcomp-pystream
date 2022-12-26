@@ -1,3 +1,4 @@
+import json
 import asyncio
 import logging
 
@@ -32,7 +33,12 @@ async def stream_handler(request):
     Creates the EventStream, registers it to the worker and waits until the
     stream dies.
     """
-    stream = await sse_response(request, response_cls=SREventSourceResponse)
+    stream = SREventSourceResponse()
+    await stream.prepare(request)
+    try:
+        stream.ping_interval = request.app['state'].config['ping_period']
+    except KeyError:
+        pass
 
     # send current state
     try:
@@ -41,7 +47,8 @@ async def stream_handler(request):
         pass
     else:
         for msg in initial_data:
-            await stream.send(msg['data'], event=msg['event'])
+            await stream.send(
+                json.dumps(msg['data'], separators=(',',':')), event=msg['event'])
 
     request.app["streams"].add(stream)
     try:

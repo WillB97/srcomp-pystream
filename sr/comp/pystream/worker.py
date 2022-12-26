@@ -12,10 +12,10 @@ LOGGER = logging.getLogger(__name__)
 
 async def worker(app):
     while True:
+        # Fetch the message to send to all eventstreams and websockets
+        msg = await app['event_queue'].get()
+        LOGGER.debug(msg)
         try:
-            # Fetch the message to send to all eventstreams and websockets
-            msg = await app['event_queue'].get()
-            LOGGER.debug(msg)
 
             # Collect up the actions to be awaited and the calling response so that
             # streams are closed when they die
