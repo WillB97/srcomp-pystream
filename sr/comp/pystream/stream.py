@@ -25,7 +25,7 @@ class SREventSourceResponse(EventSourceResponse):
                 self.stop_streaming()
 
 
-@routes.get('/event')
+@routes.get('/')
 async def stream_handler(request):
     """
     EventStream endpoint.
