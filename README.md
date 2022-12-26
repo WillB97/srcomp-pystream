@@ -2,7 +2,7 @@
 
 A Python application that gives an EventStream and WebSocket of events from SRComp by wrapping the HTTP API.
 
-## Usage
+## Usage
 
 ### Install:
 
@@ -19,9 +19,9 @@ run `srcomp_pystream http://localhost:5112/comp-api/`.
 
 The output from the stream can be seen via curl, for example: curl http://localhost:8080.
 
-## Development
+## Development
 
-### Install:
+### Install:
 
 Install the package in editable mode.
 ```
