@@ -37,11 +37,18 @@ def setup(app, api_url, debug=False):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="")
+    parser = argparse.ArgumentParser(
+        description=(
+            "An EventStream and WebSocket server for events from SRComp by "
+            "wrapping the HTTP API."))
 
-    parser.add_argument('api_url')
-    parser.add_argument('--bind_address', default='127.0.0.1')
-    parser.add_argument('--port', type=int, default=8080)
+    parser.add_argument('api_url', help="The url of the SRComp HTTP API")
+    parser.add_argument(
+        '--bind_address', default='127.0.0.1',
+        help="The network address ot bind to, defaults to localhost")
+    parser.add_argument(
+        '--port', type=int, default=8080,
+        help="The port to expose the webserver on, defaults to 8080")
     parser.add_argument('--debug', action='store_true')
 
     args = parser.parse_args()
