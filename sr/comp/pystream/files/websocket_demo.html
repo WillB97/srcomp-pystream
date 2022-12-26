@@ -1,0 +1,38 @@
+<html>
+    <head>
+        <meta name="color-scheme" content="light dark">
+        <script type="text/javascript"
+            src="http://code.jquery.com/jquery.min.js"></script>
+        <script type="text/javascript">
+        var wsSource;
+        function wsConnect() {
+            // Create WebSocket connection.
+            var url = new URL(document.location.href)
+            url.protocol = ((url.protocol == "https:") ? "wss:" : "ws:")
+            wsSource = new WebSocket(url.href);
+
+            // Listen for messages
+            wsSource.addEventListener('message', (event) => {
+                const msg = JSON.parse(event.data);
+                // Format to match viewing an eventstream
+                if ("event" in msg) {
+                    document.getElementById('response').append("event: " + msg.event + "\\n");
+                }
+                document.getElementById('response').append("data: " + msg.data + "\\n\\n");
+            });
+
+            // Reconnect the websocket if it closes
+            wsSource.addEventListener('close', (event) => {
+                console.log('WebSocket closed with code: ', event.code);
+                setTimeout(() => {
+                    wsConnect();
+                }, 1000);
+            });
+        }
+        wsConnect();
+        </script>
+    </head>
+    <body>
+        <pre id="response" style="word-wrap: break-word; white-space: pre-wrap;"></pre>
+    </body>
+</html>

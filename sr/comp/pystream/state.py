@@ -1,7 +1,7 @@
 import argparse
 import asyncio
 import logging
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 import aiohttp
 
@@ -290,10 +290,40 @@ class CachedState:
             if task:
                 task.cancel()
 
+        for task in (self.state_task, self.current_state_task, self.config_task):
+            if task:
+                with suppress(asyncio.CancelledError):
+                    await task
+
         await self.session.close()
         self.session = None
 
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0)
+
+
+async def on_startup(app):
+    """Create the state tracking tasks and store a reference to be used by requests."""
+    event_queue = app["event_queue"]
+    base_url = app["comp_api"]
+    app["state"] = CachedState(base_url, event_queue)
+
+    await app["state"].run()
+    await asyncio.sleep(0)
+
+
+async def clean_up(app):
+    """Cleanly close the background tasks."""
+    await app["state"].stop()
+
+
+def setup(app, api_url):
+    """Configure event handlers."""
+    # The queue to pass events from state to the worker task
+    app["event_queue"] = asyncio.Queue()
+    app["comp_api"] = api_url
+
+    app.on_startup.append(on_startup)
+    app.on_cleanup.append(clean_up)
 
 
 def main(argv=None):
