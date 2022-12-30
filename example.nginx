@@ -1,0 +1,26 @@
+server {
+  listen 80 default_server;
+  listen [::]:80 default_server;
+  client_max_body_size 4G;
+
+  server_name _;
+
+  location / {
+    proxy_pass http://127.0.0.1:8080;
+
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_redirect off;
+    proxy_buffering off;
+
+    # The following config is required to proxy websockets
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $http_connection;
+  }
+
+  # location /static {
+  #   # path for static files
+  #   root /path/to/app/static;
+  # }
+}
