@@ -33,6 +33,7 @@ async def stream_handler(request):
     Creates the EventStream, registers it to the worker and waits until the
     stream dies.
     """
+    LOGGER.info(f"New connection to stream")
     stream = SREventSourceResponse()
     await stream.prepare(request)
     try:
@@ -46,9 +47,13 @@ async def stream_handler(request):
     except KeyError:
         pass
     else:
-        for msg in initial_data:
-            await stream.send(
-                json.dumps(msg['data'], separators=(',', ':')), event=msg['event'])
+        try:
+            for msg in initial_data:
+                await stream.send(
+                    json.dumps(msg['data'], separators=(',', ':')), event=msg['event'])
+        except ConnectionResetError:
+            # Connection closed before we finished sending
+            return stream
 
     request.app["streams"].add(stream)
     try:
