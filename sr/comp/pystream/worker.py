@@ -1,3 +1,4 @@
+import json
 import asyncio
 import logging
 import weakref
@@ -23,7 +24,11 @@ async def worker(app):
 
             # Generate eventstream actions
             for stream in app["streams"]:
-                actions.append(stream.send(msg['data'], event=msg['event']))
+                if isinstance(msg['data'], str):
+                    data = msg['data']
+                else:
+                    data = json.dumps(msg['data'])
+                actions.append(stream.send(data, event=msg['event']))
                 actors.append(stream)
 
             # Generate websocket actions
@@ -43,6 +48,8 @@ async def worker(app):
                         conn.stop_streaming()
                     elif isinstance(conn, WebSocketResponse):
                         await conn.close()
+                    else:
+                        raise result
         except Exception as e:
             LOGGER.exception(f"Worker thread encountered: {e}")
             await asyncio.sleep(0.5)
