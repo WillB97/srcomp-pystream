@@ -23,6 +23,9 @@ class SREventSourceResponse(EventSourceResponse):
                 await self.send(f"{self._ping_interval * 1000}", event='ping')
             except ConnectionResetError:
                 self.stop_streaming()
+            except RuntimeError:
+                # sending to a closed socket can throw a runtime error
+                return
 
 
 @routes.get('/')
