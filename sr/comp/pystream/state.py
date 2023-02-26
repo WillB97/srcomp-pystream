@@ -303,6 +303,8 @@ class CachedState:
 
 async def on_startup(app):
     """Create the state tracking tasks and store a reference to be used by requests."""
+    # The queue to pass events from state to the worker task
+    app["event_queue"] = asyncio.Queue()
     event_queue = app["event_queue"]
     base_url = app["comp_api"]
     app["state"] = CachedState(base_url, event_queue)
@@ -318,8 +320,6 @@ async def clean_up(app):
 
 def setup(app, api_url):
     """Configure event handlers."""
-    # The queue to pass events from state to the worker task
-    app["event_queue"] = asyncio.Queue()
     app["comp_api"] = api_url
 
     app.on_startup.append(on_startup)
