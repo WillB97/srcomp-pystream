@@ -262,10 +262,13 @@ class CachedState:
     async def _periodic_task(self, coro, interval, args=[]):
         """Helper wrapper to run a coroutine periodically each interval seconds."""
         while True:
-            await asyncio.gather(
-                asyncio.sleep(interval),
-                coro(*args),
-            )
+            try:
+                await asyncio.gather(
+                    asyncio.sleep(interval),
+                    coro(*args),
+                )
+            except Exception as e:
+                LOGGER.exception(f"Periodic task failed because {e}")
 
     async def run(self):
         """Begin fetching the state from the HTTP API periodically."""
