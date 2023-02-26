@@ -12,6 +12,11 @@ from .worker import setup as worker_setup
 LOGGER = logging.getLogger(__name__)
 
 
+async def on_prepare(request, response):
+    """Enable Cross-Origin support."""
+    response.headers['Access-Control-Allow-Origin'] = '*'
+
+
 def setup_logger(debug=False):
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
@@ -55,6 +60,7 @@ def main():
 
     app = web.Application()
     setup(app, args.api_url, args.debug)
+    app.on_response_prepare.append(on_prepare)
 
     web.run_app(app, host=args.bind_address, port=args.port)
 
