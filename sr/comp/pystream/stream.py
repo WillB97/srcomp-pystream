@@ -33,7 +33,7 @@ async def stream_handler(request):
     Creates the EventStream, registers it to the worker and waits until the
     stream dies.
     """
-    LOGGER.info(f"New connection to stream")
+    LOGGER.info("New connection to stream")
     stream = SREventSourceResponse()
     await stream.prepare(request)
     try:

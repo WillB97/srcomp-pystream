@@ -27,7 +27,7 @@ async def websocket_handler(request):
             text=(Path(__file__).parent / 'files/websocket_demo.html').read_text(),
             content_type="text/html")
 
-    LOGGER.info(f"New connection to websocket")
+    LOGGER.info("New connection to websocket")
     # Setup the websocket and
     await ws.prepare(request)
 

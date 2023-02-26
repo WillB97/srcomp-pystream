@@ -1,5 +1,5 @@
-import json
 import asyncio
+import json
 import logging
 import weakref
 from contextlib import suppress
