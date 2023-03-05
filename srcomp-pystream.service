@@ -8,7 +8,9 @@ User=www-data
 Type=simple
 Restart=on-failure
 
-ExecStart=srcomp-pystream "http://localhost/comp-api"
+WorkingDirectory=/srv
+EnvironmentFile=example.env
+ExecStart=srcomp-pystream
 
 [Install]
 WantedBy=multi-user.target

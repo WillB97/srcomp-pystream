@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+import os
 import argparse
 import logging
 
@@ -47,12 +48,15 @@ def main():
             "An EventStream and WebSocket server for events from SRComp by "
             "wrapping the HTTP API."))
 
-    parser.add_argument('api_url', help="The url of the SRComp HTTP API")
     parser.add_argument(
-        '--bind_address', default='127.0.0.1',
-        help="The network address ot bind to, defaults to localhost")
+        '--api_url',
+        default=os.environ.get('SRCOMP_API_URL', 'http://localhost:5112/comp-api/'),
+        help="The url of the SRComp HTTP API")
     parser.add_argument(
-        '--port', type=int, default=8080,
+        '--bind_address', default=os.environ.get('SRCOMP_STREAM_BIND', '127.0.0.1'),
+        help="The network address to bind to, defaults to localhost")
+    parser.add_argument(
+        '--port', type=int, default=os.environ.get('SRCOMP_STREAM_PORT', 8080),
         help="The port to expose the webserver on, defaults to 8080")
     parser.add_argument('--debug', action='store_true')
 
