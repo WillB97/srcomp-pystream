@@ -15,7 +15,7 @@ pip install git+https://github.com/WillB97/srcomp-pystream.git
 
 Assuming you have [srcomp-http](https://github.com/PeterJCLaw/srcomp-http)
 running on `http://localhost:5112/comp-api/`,
-run `srcomp-pystream --api_url http://localhost:5112/comp-api/`.
+run `srcomp-pystream --api-url http://localhost:5112/comp-api/`.
 
 The output from the stream can be seen via curl, for example: curl http://localhost:8080.
 
