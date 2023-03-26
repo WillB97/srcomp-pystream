@@ -61,7 +61,7 @@ class CachedState:
         Returns a list of event messages for any state information that has changed.
         """
         msgs = []
-        print("Reloading data")
+        LOGGER.info("Reloading data")
 
         team_updates = await self.update_teams()
         msgs.extend([
