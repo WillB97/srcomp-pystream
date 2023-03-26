@@ -42,7 +42,7 @@ class CachedState:
                     try:
                         data = await response.json()
                     except aiohttp.ContentTypeError:
-                        LOGGER.error(f"Response from {url!r} is not JSON: {response.text()}")
+                        LOGGER.error(f"Response from {url!r} is not JSON: {await response.text()!r}")
                         data = None
 
                     yield data
