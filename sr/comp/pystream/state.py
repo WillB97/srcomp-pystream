@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import json
 import logging
 from contextlib import asynccontextmanager, suppress
 
@@ -43,6 +44,9 @@ class CachedState:
                         data = await response.json()
                     except UnicodeDecodeError:
                         LOGGER.error(f"Response from {url!r} could not be decoded: {await response.read()!r}")
+                        data = None
+                    except json.JSONDecodeError:
+                        LOGGER.error(f"Response from {url!r} is not valid JSON: {await response.text()!r}")
                         data = None
                     except aiohttp.ContentTypeError:
                         LOGGER.error(f"Response from {url!r} is not JSON: {await response.text()!r}")
