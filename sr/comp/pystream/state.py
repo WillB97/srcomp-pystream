@@ -173,7 +173,7 @@ class CachedState:
                 self.state_hash = new_state
                 update_msgs = await self.update_data()
 
-            if self.queue:
+            if self.queue is not None:
                 for msg in update_msgs:
                     await self.queue.put(msg)
 
@@ -214,7 +214,7 @@ class CachedState:
                     self.current_delay = new_current_delay
                     msgs.append({'event': 'current-delay', 'data': new_current_delay})
 
-            if self.queue:
+            if self.queue is not None:
                 for msg in msgs:
                     await self.queue.put(msg)
 
