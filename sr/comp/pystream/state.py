@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__name__)
 class CachedState:
     def __init__(self, base_url, queue=None) -> None:
         self.session = None
-        self._timeout = aiohttp.ClientTimeout(total=5)
+        self._timeout = aiohttp.ClientTimeout(total=30)
         self.base_url = base_url.rstrip('/')
         # Event messages are sent to this queue
         self.queue = queue
