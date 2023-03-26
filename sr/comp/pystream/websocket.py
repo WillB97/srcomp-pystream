@@ -17,7 +17,7 @@ async def websocket_handler(request):
     WebSocket endpoint, returns an EventStream-like page if visited directly.
 
     Creates the WebSocket, registers it to the worker and waits until the
-    stream dies. Prints any errors and recieved messages to console.
+    stream dies. Prints any errors and received messages to console.
     """
     ws = WebSocketResponse()
     ws_ready = ws.can_prepare(request)

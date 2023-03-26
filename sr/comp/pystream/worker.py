@@ -38,7 +38,7 @@ async def worker(app):
                     actors.append(socket)
 
                 # Run all sending in parallel.
-                # return_exceptions is used to collect up the raised execptions so they can
+                # return_exceptions is used to collect up the raised exceptions so they can
                 # be processed.
                 res = await asyncio.gather(*actions, return_exceptions=True)
                 # res contains an mixture of return values and errors in the same order as the
