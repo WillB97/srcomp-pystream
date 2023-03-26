@@ -42,16 +42,16 @@ class CachedState:
                     try:
                         data = await response.json()
                     except aiohttp.ContentTypeError:
-                        LOGGER.error(f"Response from '{url}' is not JSON: {response.text()}")
+                        LOGGER.error(f"Response from {url!r} is not JSON: {response.text()}")
                         data = None
 
                     yield data
                 else:
                     if not (response.status == 404 and silent_404 is True):
-                        LOGGER.error(f"Invalid status code from '{url}': {response.status}")
+                        LOGGER.error(f"Invalid status code from {url!r}: {response.status}")
                     yield None
         except aiohttp.ClientError as e:
-            LOGGER.error(f"Error making request to '{url}': {e}")
+            LOGGER.error(f"Error making request to {url!r}: {e}")
             yield None
 
     async def update_data(self):
