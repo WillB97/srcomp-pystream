@@ -96,11 +96,11 @@ class CachedState:
             # calculate and return diff of teams
             team_changes = []
             removed_teams = set(self.teams.keys()) - set(new_teams.keys())
-            team_changes.extend([(tla, None) for tla in removed_teams])
+            team_changes.extend([None for _tla in removed_teams])
 
             for key, record in new_teams.items():
                 if record != self.teams.get(key):
-                    team_changes.append((key, record))
+                    team_changes.append(record)
 
             self.teams = new_teams
             return team_changes
