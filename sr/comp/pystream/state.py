@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import json
 import logging
 from contextlib import asynccontextmanager, suppress
 
@@ -41,17 +42,23 @@ class CachedState:
                 if response.status == 200:
                     try:
                         data = await response.json()
+                    except UnicodeDecodeError:
+                        LOGGER.error(f"Response from {url!r} could not be decoded: {await response.read()!r}")
+                        data = None
+                    except json.JSONDecodeError:
+                        LOGGER.error(f"Response from {url!r} is not valid JSON: {await response.text()!r}")
+                        data = None
                     except aiohttp.ContentTypeError:
-                        LOGGER.error(f"Response from '{url}' is not JSON: {response.text()}")
+                        LOGGER.error(f"Response from {url!r} is not JSON: {await response.text()!r}")
                         data = None
 
                     yield data
                 else:
                     if not (response.status == 404 and silent_404 is True):
-                        LOGGER.error(f"Invalid status code from '{url}': {response.status}")
+                        LOGGER.error(f"Invalid status code from {url!r}: {response.status}")
                     yield None
         except aiohttp.ClientError as e:
-            LOGGER.error(f"Error making request to '{url}': {e}")
+            LOGGER.error(f"Error making request to {url!r}: {e}")
             yield None
 
     async def update_data(self):
