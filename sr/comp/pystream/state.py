@@ -234,6 +234,9 @@ class CachedState:
                 return
 
             self.config = new_config
+            # Once the config is loaded stop trying to refetch it
+            if not self.config_task.done():
+                self.config_task.cancel()
 
     def current_data(self):
         """
