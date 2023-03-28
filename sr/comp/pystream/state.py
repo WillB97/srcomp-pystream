@@ -43,13 +43,19 @@ class CachedState:
                     try:
                         data = await response.json()
                     except UnicodeDecodeError:
-                        LOGGER.error(f"Response from {url!r} could not be decoded: {await response.read()!r}")
+                        LOGGER.error(
+                            f"Response from {url!r} could not be decoded: "
+                            f"{await response.read()!r}")
                         data = None
                     except json.JSONDecodeError:
-                        LOGGER.error(f"Response from {url!r} is not valid JSON: {await response.text()!r}")
+                        LOGGER.error(
+                            f"Response from {url!r} is not valid JSON: "
+                            f"{await response.text()!r}")
                         data = None
                     except aiohttp.ContentTypeError:
-                        LOGGER.error(f"Response from {url!r} is not JSON: {await response.text()!r}")
+                        LOGGER.error(
+                            f"Response from {url!r} is not JSON: "
+                            f"{await response.text()!r}")
                         data = None
 
                     yield data
@@ -112,8 +118,7 @@ class CachedState:
         Triggers refetching the current matches if the value has changed.
         """
         async with self.checked_response('/matches') as data:
-            if data is None or (new_matches := data.get('matches')) is None:
-                return
+            new_matches = data.get('matches') if data is not None else None
 
             if self.matches != new_matches:
                 self.matches = new_matches
@@ -141,8 +146,7 @@ class CachedState:
         Returns an event message if the value has changed.
         """
         async with self.checked_response('/knockout') as data:
-            if data is None or (new_knockouts := data.get('rounds')) is None:
-                return []
+            new_knockouts = data.get('rounds') if data is not None else None
 
             if self.knockouts != new_knockouts:
                 self.knockouts = new_knockouts
@@ -156,12 +160,12 @@ class CachedState:
         Returns an event message if the value has changed.
         """
         async with self.checked_response('/tiebreaker', silent_404=True) as data:
-            if data is None or (new_tiebreaker := data.get('tiebreaker')) is None:
-                return []
+            new_tiebreaker = data.get('tiebreaker') if data is not None else None
 
             if self.tiebreaker != new_tiebreaker:
                 self.tiebreaker = new_tiebreaker
                 return [{'event': 'tiebreaker', 'data': new_tiebreaker}]
+        return []
 
     async def update_state(self):
         """
@@ -172,17 +176,16 @@ class CachedState:
         2. Sends event messages to `self.queue` for all changes encountered.
         """
         async with self.checked_response('/state') as data:
-            if data is None or (new_state := data.get('state')) is None:
-                return
+            new_state = data.get('state') if data is not None else None
 
             update_msgs = []
             if self.state_hash != new_state:
                 self.state_hash = new_state
                 update_msgs = await self.update_data()
 
-            if self.queue is not None:
-                for msg in update_msgs:
-                    await self.queue.put(msg)
+                if self.queue is not None:
+                    for msg in update_msgs:
+                        await self.queue.put(msg)
 
     async def update_current_state(self):
         """
@@ -235,7 +238,7 @@ class CachedState:
 
             self.config = new_config
             # Once the config is loaded stop trying to refetch it
-            if not self.config_task.done():
+            if self.config_task is not None and not self.config_task.done():
                 self.config_task.cancel()
 
     def current_data(self):
