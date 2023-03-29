@@ -178,7 +178,6 @@ class CachedState:
         async with self.checked_response('/state') as data:
             new_state = data.get('state') if data is not None else None
 
-            update_msgs = []
             if self.state_hash != new_state:
                 self.state_hash = new_state
                 update_msgs = await self.update_data()
