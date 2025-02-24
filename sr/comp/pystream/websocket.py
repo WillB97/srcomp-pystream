@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from aiohttp import WSMsgType, web
-from aiohttp.web import Response, WebSocketResponse
+from aiohttp.web import FileResponse, WebSocketResponse
 
 LOGGER = logging.getLogger(__name__)
 
@@ -23,9 +23,7 @@ async def websocket_handler(request):
     ws_ready = ws.can_prepare(request)
     if not ws_ready.ok:
         # Return a page to view the websocket messages on if this is an HTTP request
-        return Response(
-            text=(Path(__file__).parent / 'files/websocket_demo.html').read_text(),
-            content_type="text/html")
+        return FileResponse(str(Path(__file__).parent / 'files/websocket_demo.html'))
 
     LOGGER.info("New connection to websocket")
     # Setup the websocket and
@@ -71,6 +69,12 @@ async def websocket_handler(request):
 
     LOGGER.info('websocket connection closed')
     return ws
+
+
+@routes.get('/timesync.js')
+async def timesync_library(request):
+    """Serve timesync.js library."""
+    return FileResponse(str(Path(__file__).parent / 'files/timesync.js'))
 
 
 def setup(app):

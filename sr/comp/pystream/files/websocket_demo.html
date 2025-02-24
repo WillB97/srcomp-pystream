@@ -1,6 +1,7 @@
 <html>
     <head>
         <meta name="color-scheme" content="light dark">
+        <script type="text/javascript" src="timesync.js"></script>
         <script type="text/javascript">
         var wsSource;
         function wsConnect() {
@@ -12,6 +13,18 @@
             // Listen for messages
             wsSource.addEventListener('message', (event) => {
                 const msg = JSON.parse(event.data);
+                // Handle time sync messages
+                if (msg.type == "timesync") {
+                    process_timesync(msg);
+                    document.getElementById('response').append(
+                        "Latencies: ("
+                        + "time error: " + current_latencies.time_error.toFixed(3) + "ms, "
+                        + "server latency: " + current_latencies.server_latency.toFixed(3) + "ms, "
+                        + "network latency: " + current_latencies.network_latency.toFixed(3) + "ms"
+                        + ")\n"
+                    );
+                    return
+                }
                 // Format to match viewing an eventstream
                 if ("event" in msg) {
                     document.getElementById('response').append("event: " + msg.event + "\n");
@@ -25,6 +38,10 @@
                 setTimeout(() => {
                     wsConnect();
                 }, 1000);
+            });
+
+            wsSource.addEventListener('open', (event) => {
+                configure_timesync(wsSource, interval=60000);
             });
         }
         wsConnect();

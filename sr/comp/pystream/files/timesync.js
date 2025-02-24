@@ -15,11 +15,15 @@ var current_latencies = {
     network_latency: null
 };
 var timesync_ws = null;
+var timesync_interval = null;
 
 
 function configure_timesync(ws, interval=1000) {
     timesync_ws = ws;
-    setInterval(do_timesync, interval);
+    if (timesync_interval !== null) {
+        clearInterval(timesync_interval);
+    }
+    timesync_interval = setInterval(do_timesync, interval);
     do_timesync();
 }
 function do_timesync() {
