@@ -18,9 +18,9 @@
                     process_timesync(msg);
                     document.getElementById('response').append(
                         "Latencies: ("
-                        + "time error: " + current_latencies.time_error
-                        + ", serverlatency: " + current_latencies.server_latency
-                        + ", networklatency: " + current_latencies.network_latency
+                        + "time error: " + current_latencies.time_error.toFixed(3) + "ms, "
+                        + "server latency: " + current_latencies.server_latency.toFixed(3) + "ms, "
+                        + "network latency: " + current_latencies.network_latency.toFixed(3) + "ms"
                         + ")\n"
                     );
                     return
@@ -40,7 +40,9 @@
                 }, 1000);
             });
 
-            configure_timesync(wsSource, interval=60000);
+            wsSource.addEventListener('open', (event) => {
+                configure_timesync(wsSource, interval=60000);
+            });
         }
         wsConnect();
         </script>

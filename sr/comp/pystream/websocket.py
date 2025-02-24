@@ -71,7 +71,7 @@ async def websocket_handler(request):
     return ws
 
 
-@routes.get('/ws/timesync.js')
+@routes.get('/timesync.js')
 async def timesync_library(request):
     """Serve timesync.js library."""
     return FileResponse(str(Path(__file__).parent / 'files/timesync.js'))
