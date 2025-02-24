@@ -53,7 +53,7 @@ def main():
         default=os.environ.get('SRCOMP_API_URL', 'http://localhost:5112/comp-api/'),
         help="The url of the SRComp HTTP API")
     parser.add_argument(
-        '--bind-address', default=os.environ.get('SRCOMP_STREAM_BIND', '127.0.0.1'),
+        '--bind-address', default=os.environ.get('SRCOMP_STREAM_BIND', 'localhost'),
         help="The network address to bind to, defaults to localhost")
     parser.add_argument(
         '--port', type=int, default=os.environ.get('SRCOMP_STREAM_PORT', 8080),
