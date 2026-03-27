@@ -25,6 +25,7 @@ class CachedState:
         self.matches = []
         self.last_scored = None
         self.knockout_rounds = None
+        self.knockout_structure = None
         self.tiebreaker = None
         self.state_hash = ''
         self.config = {}
@@ -152,6 +153,12 @@ class CachedState:
                 self.knockout_rounds = new_rounds
                 return [{'event': 'knockouts', 'data': new_rounds}]
 
+            new_structure = data.get('structure') if data is not None else None
+
+            if self.knockout_structure != new_structure:
+                self.knockout_structure = new_structure
+                return [{'event': 'knockout-structure', 'data': new_structure}]
+
         return []
 
     async def update_tiebreaker(self):
@@ -266,6 +273,8 @@ class CachedState:
             msgs.append({'event': 'last-scored-match', 'data': self.last_scored})
         if self.knockout_rounds is not None:
             msgs.append({'event': 'knockouts', 'data': self.knockout_rounds})
+        if self.knockout_structure is not None:
+            msgs.append({'event': 'knockout-structure', 'data': self.knockout_structure})
         msgs.append({'event': 'current-delay', 'data': self.current_delay})
         if self.tiebreaker:
             msgs.append({'event': 'tiebreaker', 'data': self.tiebreaker})
