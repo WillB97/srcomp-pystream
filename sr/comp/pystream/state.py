@@ -24,7 +24,7 @@ class CachedState:
         self.teams = {}
         self.matches = []
         self.last_scored = None
-        self.knockouts = None
+        self.knockout_rounds = None
         self.tiebreaker = None
         self.state_hash = ''
         self.config = {}
@@ -146,11 +146,12 @@ class CachedState:
         Returns an event message if the value has changed.
         """
         async with self.checked_response('/knockout') as data:
-            new_knockouts = data.get('rounds') if data is not None else None
+            new_rounds = data.get('rounds') if data is not None else None
 
-            if self.knockouts != new_knockouts:
-                self.knockouts = new_knockouts
-                return [{'event': 'knockouts', 'data': new_knockouts}]
+            if self.knockout_rounds != new_rounds:
+                self.knockout_rounds = new_rounds
+                return [{'event': 'knockouts', 'data': new_rounds}]
+
         return []
 
     async def update_tiebreaker(self):
@@ -263,8 +264,8 @@ class CachedState:
         })
         if self.last_scored is not None:
             msgs.append({'event': 'last-scored-match', 'data': self.last_scored})
-        if self.knockouts is not None:
-            msgs.append({'event': 'knockouts', 'data': self.knockouts})
+        if self.knockout_rounds is not None:
+            msgs.append({'event': 'knockouts', 'data': self.knockout_rounds})
         msgs.append({'event': 'current-delay', 'data': self.current_delay})
         if self.tiebreaker:
             msgs.append({'event': 'tiebreaker', 'data': self.tiebreaker})
