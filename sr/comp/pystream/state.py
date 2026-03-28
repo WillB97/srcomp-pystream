@@ -24,7 +24,8 @@ class CachedState:
         self.teams = {}
         self.matches = []
         self.last_scored = None
-        self.knockouts = None
+        self.knockout_rounds = None
+        self.knockout_structure = None
         self.tiebreaker = None
         self.state_hash = ''
         self.config = {}
@@ -146,11 +147,18 @@ class CachedState:
         Returns an event message if the value has changed.
         """
         async with self.checked_response('/knockout') as data:
-            new_knockouts = data.get('rounds') if data is not None else None
+            new_rounds = data.get('rounds') if data is not None else None
 
-            if self.knockouts != new_knockouts:
-                self.knockouts = new_knockouts
-                return [{'event': 'knockouts', 'data': new_knockouts}]
+            if self.knockout_rounds != new_rounds:
+                self.knockout_rounds = new_rounds
+                return [{'event': 'knockouts', 'data': new_rounds}]
+
+            new_structure = data.get('structure') if data is not None else None
+
+            if self.knockout_structure != new_structure:
+                self.knockout_structure = new_structure
+                return [{'event': 'knockout-structure', 'data': new_structure}]
+
         return []
 
     async def update_tiebreaker(self):
@@ -263,8 +271,10 @@ class CachedState:
         })
         if self.last_scored is not None:
             msgs.append({'event': 'last-scored-match', 'data': self.last_scored})
-        if self.knockouts is not None:
-            msgs.append({'event': 'knockouts', 'data': self.knockouts})
+        if self.knockout_rounds is not None:
+            msgs.append({'event': 'knockouts', 'data': self.knockout_rounds})
+        if self.knockout_structure is not None:
+            msgs.append({'event': 'knockout-structure', 'data': self.knockout_structure})
         msgs.append({'event': 'current-delay', 'data': self.current_delay})
         if self.tiebreaker:
             msgs.append({'event': 'tiebreaker', 'data': self.tiebreaker})
