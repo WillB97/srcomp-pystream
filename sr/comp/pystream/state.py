@@ -24,7 +24,7 @@ class CachedState:
         self.teams = {}
         self.matches = []
         self.last_scored = None
-        self.knockouts = []
+        self.knockouts = None
         self.tiebreaker = None
         self.state_hash = ''
         self.config = {}
@@ -263,7 +263,7 @@ class CachedState:
         })
         if self.last_scored is not None:
             msgs.append({'event': 'last-scored-match', 'data': self.last_scored})
-        if self.knockouts is not []:
+        if self.knockouts is not None:
             msgs.append({'event': 'knockouts', 'data': self.knockouts})
         msgs.append({'event': 'current-delay', 'data': self.current_delay})
         if self.tiebreaker:
