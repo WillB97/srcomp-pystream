@@ -147,19 +147,21 @@ class CachedState:
         Returns an event message if the value has changed.
         """
         async with self.checked_response('/knockout') as data:
+            msgs = []
+
             new_rounds = data.get('rounds') if data is not None else None
 
             if self.knockout_rounds != new_rounds:
                 self.knockout_rounds = new_rounds
-                return [{'event': 'knockouts', 'data': new_rounds}]
+                msgs.append({'event': 'knockouts', 'data': new_rounds})
 
             new_structure = data.get('structure') if data is not None else None
 
             if self.knockout_structure != new_structure:
                 self.knockout_structure = new_structure
-                return [{'event': 'knockout-structure', 'data': new_structure}]
+                msgs.append({'event': 'knockout-structure', 'data': new_structure})
 
-        return []
+        return msgs
 
     async def update_tiebreaker(self):
         """
