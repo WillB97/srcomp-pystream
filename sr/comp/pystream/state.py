@@ -23,6 +23,7 @@ class CachedState:
 
         self.teams = {}
         self.matches = []
+        self.last_released = None
         self.last_scored = None
         self.knockout_rounds = None
         self.knockout_structure = None
@@ -70,7 +71,7 @@ class CachedState:
 
     async def update_data(self):
         """
-        Refresh the team, last scored, knockout and tiebreaker states.
+        Refresh the team, last released, last scored, knockout and tiebreaker states.
 
         Returns a list of event messages for any state information that has changed.
         """
@@ -84,6 +85,7 @@ class CachedState:
         ])
 
         await self.update_matches()
+        msgs.extend(await self.update_last_released_match())
         msgs.extend(await self.update_last_scored_match())
         msgs.extend(await self.update_knockouts())
         msgs.extend(await self.update_tiebreaker())
@@ -124,6 +126,21 @@ class CachedState:
             if self.matches != new_matches:
                 self.matches = new_matches
                 await self.update_current_state()
+
+    async def update_last_released_match(self):
+        """
+        Fetch the last released match number from the HTTP API and cache it.
+
+        Returns an event message if the value has changed.
+        """
+        async with self.checked_response('/matches/last_released') as data:
+            if data is None or (latest_released := data.get('last_released')) is None:
+                return []
+
+            if self.last_released != latest_released:
+                self.last_released = latest_released
+                return [{'event': 'last-released-match', 'data': latest_released}]
+        return []
 
     async def update_last_scored_match(self):
         """
@@ -182,7 +199,7 @@ class CachedState:
         Fetch the current state hash from the HTTP API and cache it.
 
         When the state information has changed:
-        1. Triggers the team, last scored, knockout and tiebreaker state to be refreshed.
+        1. Triggers the team, last released, last scored, knockout and tiebreaker state to be refreshed.
         2. Sends event messages to `self.queue` for all changes encountered.
         """
         async with self.checked_response('/state') as data:
@@ -271,6 +288,8 @@ class CachedState:
             'event': 'current-shepherding-matches',
             'data': self.current_shepherding_matches
         })
+        if self.last_released is not None:
+            msgs.append({'event': 'last-released-match', 'data': self.last_released})
         if self.last_scored is not None:
             msgs.append({'event': 'last-scored-match', 'data': self.last_scored})
         if self.knockout_rounds is not None:
